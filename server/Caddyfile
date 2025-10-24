@@ -1,0 +1,47 @@
+{
+	apps {
+		http {
+			servers {
+				app {
+					listen :8000
+					routes {
+						# FastAPI app on 9000
+						route {
+							match {
+								path /
+							}
+							handle {
+								reverse_proxy 127.0.0.1:9000
+							}
+						}
+
+						# noVNC static client under /vnc/
+						route {
+							match {
+								path /vnc/*
+							}
+							handle {
+								root * /usr/share/novnc
+								uri strip_prefix /vnc
+								file_server
+							}
+						}
+
+						# websockify proxy for VNC websocket
+						route {
+							match {
+								path /websockify*
+							}
+							handle {
+								reverse_proxy 127.0.0.1:5901 {
+									header_up Host {http.reverse_proxy.upstream.hostport}
+									header_up X-Forwarded-Proto {scheme}
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+}

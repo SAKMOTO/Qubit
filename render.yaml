@@ -8,6 +8,6 @@ services:
       - key: PYTHONUNBUFFERED
         value: "1"
       - key: USE_CLOUD_BROWSER
-        value: "1"
+        value: "0"
     autoDeploy: true
     healthCheckPath: /
