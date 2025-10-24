@@ -7,5 +7,7 @@ services:
     envVars:
       - key: PYTHONUNBUFFERED
         value: "1"
+      - key: USE_CLOUD_BROWSER
+        value: "1"
     autoDeploy: true
     healthCheckPath: /

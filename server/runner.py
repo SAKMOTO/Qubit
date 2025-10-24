@@ -46,10 +46,15 @@ async def run_agent(job: Job, api_key: str, task: str):
         old_key = os.environ.get("BROWSER_USE_API_KEY")
         os.environ["BROWSER_USE_API_KEY"] = api_key
 
-        await ensure_playwright_chromium_installed()
+        use_cloud = os.getenv("USE_CLOUD_BROWSER", "0") == "1"
+        if not use_cloud:
+            await ensure_playwright_chromium_installed()
         await job.queue.put("status: launching browser")
 
-        browser = Browser()
+        browser = Browser(
+            # Use Browser Use Cloud in constrained hosts (e.g., Render) to avoid local Chromium issues
+            use_cloud=use_cloud,
+        )
         llm = ChatBrowserUse()
         agent = Agent(task=task, llm=llm, browser=browser)
 
