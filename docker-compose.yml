@@ -1,0 +1,19 @@
+version: "3.8"
+services:
+  browseruse:
+    build:
+      context: .
+      dockerfile: server/Dockerfile
+    container_name: browseruse-agent
+    ports:
+      - "8000:8000"
+    shm_size: "1g"
+    restart: unless-stopped
+    environment:
+      - PYTHONUNBUFFERED=1
+    # Optional: persist Playwright cache between restarts
+    # volumes:
+    #   - browseruse-pw:/root/.cache/ms-playwright
+
+# volumes:
+#   browseruse-pw:
