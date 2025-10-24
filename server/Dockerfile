@@ -15,7 +15,7 @@ COPY server/Caddyfile /app/server/Caddyfile
 
 # Install system deps for headful browser + noVNC stack
 RUN apt-get update && apt-get install -y --no-install-recommends \
-      xvfb x11vnc fluxbox novnc websockify caddy \
+      xvfb x11vnc fluxbox novnc websockify caddy imagemagick x11-apps \
       ca-certificates curl \
     && rm -rf /var/lib/apt/lists/*
 

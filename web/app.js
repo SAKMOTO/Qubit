@@ -52,9 +52,23 @@ async function startRun() {
     evtSource = new EventSource(`/logs/${job_id}`);
     evtSource.onmessage = (e) => {
       if (!e.data) return;
-      appendLog(e.data);
-      if (e.data === 'closed' || e.data.startsWith('error:')) {
-        stopRun();
+      if (e.data.startsWith('image: ')) {
+        const url = e.data.slice('image: '.length);
+        const wrap = document.createElement('div');
+        wrap.className = 'log-line';
+        const img = document.createElement('img');
+        img.src = url;
+        img.alt = 'screenshot';
+        img.style.maxWidth = '100%';
+        img.style.borderRadius = '6px';
+        wrap.appendChild(img);
+        logsEl.appendChild(wrap);
+        logsEl.scrollTop = logsEl.scrollHeight;
+      } else {
+        appendLog(e.data);
+        if (e.data === 'closed' || e.data.startsWith('error:')) {
+          stopRun();
+        }
       }
     };
     evtSource.onerror = () => {

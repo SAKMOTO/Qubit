@@ -19,6 +19,38 @@ _playwright_ready = asyncio.Lock()
 _playwright_initialized = False
 
 
+async def _capture_screenshots(job: Job, stop_event: asyncio.Event):
+    """Continuously capture the X display and stream as base64 PNG over SSE."""
+    # Only works if an X display is present (e.g., DISPLAY=:0)
+    while not stop_event.is_set():
+        try:
+            # Capture root window via xwd and convert to PNG
+            proc1 = await asyncio.create_subprocess_exec(
+                "xwd", "-root", "-silent",
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.DEVNULL,
+            )
+            proc2 = await asyncio.create_subprocess_exec(
+                "convert", "xwd:-", "png:-",
+                stdin=proc1.stdout,  # type: ignore[arg-type]
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.DEVNULL,
+            )
+            # Ensure proc1 completes to avoid zombies
+            if proc1.stdout:
+                proc1.stdout.close()
+            img_bytes, _ = await proc2.communicate()
+            # Base64 encode
+            if img_bytes:
+                import base64
+                b64 = base64.b64encode(img_bytes).decode("ascii")
+                await job.queue.put(f"image: data:image/png;base64,{b64}")
+        except Exception:
+            # Ignore errors; try again next tick
+            pass
+        await asyncio.sleep(2.0)
+
+
 async def ensure_playwright_chromium_installed():
     global _playwright_initialized
     if _playwright_initialized:
@@ -58,6 +90,13 @@ async def run_agent(job: Job, api_key: str, task: str):
         llm = ChatBrowserUse()
         agent = Agent(task=task, llm=llm, browser=browser)
 
+        # Start optional screenshot streamer if running local headful
+        screenshot_task: asyncio.Task | None = None
+        stop_event = asyncio.Event()
+        stream_shots = os.getenv("STREAM_SCREENSHOTS", "1") == "1"
+        if stream_shots and not use_cloud:
+            screenshot_task = asyncio.create_task(_capture_screenshots(job, stop_event))
+
         await job.queue.put("status: running agent")
         history = await agent.run()
 
@@ -67,6 +106,13 @@ async def run_agent(job: Job, api_key: str, task: str):
         job.error = str(e)
         await job.queue.put(f"error: {e}")
     finally:
+        # Stop screenshot streamer
+        try:
+            stop_event.set()
+            if 'screenshot_task' in locals() and screenshot_task is not None:
+                await asyncio.wait_for(screenshot_task, timeout=2.0)
+        except Exception:
+            pass
         if old_key is not None:
             os.environ["BROWSER_USE_API_KEY"] = old_key
         else:
