@@ -3,7 +3,7 @@ services:
     name: qubit-browseruse
     runtime: docker
     plan: free
-    dockerfilePath: Dockerfile
+    dockerfilePath: server/Dockerfile
     envVars:
       - key: PYTHONUNBUFFERED
         value: "1"
