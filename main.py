@@ -52,6 +52,22 @@ async def health_check():
     """Health check endpoint for Render"""
     return {"status": "healthy", "active_sessions": len(active_sessions)}
 
+@app.get("/test-static")
+async def test_static():
+    """Test if static files are accessible"""
+    import os
+    static_exists = os.path.exists("static")
+    app_js_exists = os.path.exists("static/app.js")
+    styles_exists = os.path.exists("static/styles.css")
+    
+    return {
+        "static_dir_exists": static_exists,
+        "app_js_exists": app_js_exists,
+        "styles_css_exists": styles_exists,
+        "cwd": os.getcwd(),
+        "static_files": os.listdir("static") if static_exists else []
+    }
+
 @app.post("/start-session")
 async def start_session(request: TaskRequest):
     """Start a new browser session with live view"""
