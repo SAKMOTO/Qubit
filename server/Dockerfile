@@ -50,9 +50,8 @@ COPY requirements.txt .
 RUN pip install --upgrade pip && \
     pip install --no-cache-dir -r requirements.txt
 
-# Install Playwright browsers with system dependencies
-RUN playwright install --with-deps chromium || \
-    (playwright install chromium && echo "Browser installed without system deps")
+# Install Playwright browsers (skip system deps since we already installed them)
+RUN playwright install chromium
 
 # Copy application code
 COPY . .
