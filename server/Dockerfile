@@ -1,5 +1,6 @@
 FROM python:3.11-slim
 
+# Build version: 2025-10-27-v2
 # Set environment variables
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
