@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Qubit Browser - Live View</title>
+    <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🎯 Qubit Browser - Live View</h1>
+            <p class="subtitle">Watch AI perform tasks in real-time</p>
+        </header>
+
+        <div class="main-content">
+            <!-- Control Panel -->
+            <div class="control-panel">
+                <div class="input-group">
+                    <label for="taskInput">Enter Task:</label>
+                    <textarea 
+                        id="taskInput" 
+                        placeholder="e.g., Search for Python tutorials on YouTube"
+                        rows="3"
+                    ></textarea>
+                </div>
+
+                <div class="input-group">
+                    <label for="apiKey">API Key (Optional):</label>
+                    <input 
+                        type="password" 
+                        id="apiKey" 
+                        placeholder="Browser-Use API Key"
+                    >
+                </div>
+
+                <div class="button-group">
+                    <button id="startBtn" class="btn btn-primary">
+                        <span class="btn-icon">▶</span> Start Task
+                    </button>
+                    <button id="stopBtn" class="btn btn-danger" disabled>
+                        <span class="btn-icon">⏹</span> Stop
+                    </button>
+                </div>
+
+                <div class="status-indicator" id="statusIndicator">
+                    <span class="status-dot"></span>
+                    <span class="status-text">Ready</span>
+                </div>
+            </div>
+
+            <!-- Browser View -->
+            <div class="browser-view-container">
+                <div class="browser-header">
+                    <span class="browser-title">Live Browser View</span>
+                    <button id="refreshBtn" class="icon-btn" title="Refresh Screenshot">
+                        🔄
+                    </button>
+                </div>
+                <div class="browser-view" id="browserView">
+                    <div class="placeholder">
+                        <div class="placeholder-icon">🌐</div>
+                        <p>Browser view will appear here</p>
+                        <p class="placeholder-hint">Start a task to see live browser interaction</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Action Logs -->
+            <div class="logs-container">
+                <div class="logs-header">
+                    <span class="logs-title">Action Logs</span>
+                    <button id="clearLogsBtn" class="icon-btn" title="Clear Logs">
+                        🗑️
+                    </button>
+                </div>
+                <div class="logs" id="actionLogs">
+                    <div class="log-entry info">
+                        <span class="log-time">[Ready]</span>
+                        <span class="log-message">System initialized. Ready to start tasks.</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <footer>
+            <p>Powered by Browser-Use & Playwright | <a href="https://github.com" target="_blank">GitHub</a></p>
+        </footer>
+    </div>
+
+    <script src="/static/app.js"></script>
+</body>
+</html>
