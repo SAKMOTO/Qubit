@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: qubit-browseruse
+    runtime: docker
+    plan: free
+    dockerfilePath: server/Dockerfile
+    envVars:
+      - key: PYTHONUNBUFFERED
+        value: "1"
+      - key: USE_CLOUD_BROWSER
+        value: "1"  # Enable cloud browser features
+      - key: NOVNC_ENABLED
+        value: "1" 
+    autoDeploy: true
+    healthCheckPath: /
