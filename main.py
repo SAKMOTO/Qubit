@@ -164,8 +164,8 @@ async def websocket_endpoint(websocket: WebSocket, session_id: str):
         
         playwright = await async_playwright().start()
         browser = await playwright.chromium.launch(
-            headless=False,
-            args=['--no-sandbox', '--disable-setuid-sandbox']
+            headless=True,
+            args=['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage']
         )
         context = await browser.new_context(
             viewport={'width': 1280, 'height': 800}
@@ -228,7 +228,6 @@ async def websocket_endpoint(websocket: WebSocket, session_id: str):
             message = json.loads(data)
             
             if message.get("type") == "screenshot":
-                # Send current screenshot
                 screenshot = await page.screenshot()
                 screenshot_b64 = base64.b64encode(screenshot).decode('utf-8')
                 await websocket.send_json({
