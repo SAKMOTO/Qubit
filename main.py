@@ -25,6 +25,12 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Mount static files BEFORE routes
+try:
+    app.mount("/static", StaticFiles(directory="static"), name="static")
+except Exception as e:
+    print(f"Warning: Could not mount static files: {e}")
+
 # Store active browser sessions
 active_sessions: Dict[str, dict] = {}
 
@@ -49,6 +55,7 @@ async def health_check():
 @app.post("/start-session")
 async def start_session(request: TaskRequest):
     """Start a new browser session with live view"""
+    print(f"[START-SESSION] Received task: {request.task}")
     session_id = str(uuid.uuid4())
     
     active_sessions[session_id] = {
@@ -62,6 +69,7 @@ async def start_session(request: TaskRequest):
         "websocket": None
     }
     
+    print(f"[START-SESSION] Created session: {session_id}")
     return {
         "session_id": session_id,
         "status": "session_created",
@@ -112,9 +120,12 @@ async def stop_session(session_id: str):
 @app.websocket("/ws/{session_id}")
 async def websocket_endpoint(websocket: WebSocket, session_id: str):
     """WebSocket endpoint for real-time browser updates"""
+    print(f"[WEBSOCKET] Connection attempt for session: {session_id}")
     await websocket.accept()
+    print(f"[WEBSOCKET] Connection accepted for session: {session_id}")
     
     if session_id not in active_sessions:
+        print(f"[WEBSOCKET] Invalid session ID: {session_id}")
         await websocket.close(code=1008, reason="Invalid session ID")
         return
     
@@ -241,9 +252,6 @@ async def websocket_endpoint(websocket: WebSocket, session_id: str):
         
         if session_id in active_sessions:
             del active_sessions[session_id]
-
-# Mount static files
-app.mount("/static", StaticFiles(directory="static"), name="static")
 
 if __name__ == "__main__":
     import uvicorn
