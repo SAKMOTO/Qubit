@@ -194,26 +194,60 @@ async def websocket_endpoint(websocket: WebSocket, session_id: str):
             "message": f"Running task: {task}"
         })
         
-        # Run the task - for now, just navigate and take screenshot
-        # TODO: Integrate browser-use Agent when LLM is configured
+        # Start live browser streaming
+        session["status"] = "running"
+        session["streaming"] = True
+        
+        # Run the task - navigate and start live streaming
         try:
             # Simple navigation for testing
             await page.goto("https://www.google.com")
             await page.wait_for_load_state("networkidle")
             
-            # Get screenshot
+            await websocket.send_json({
+                "type": "status",
+                "message": "Browser ready - Starting live stream..."
+            })
+            
+            # Start continuous screenshot streaming (live browser view)
+            stream_interval = 0.5  # 2 FPS - adjust for performance
+            screenshot_count = 0
+            max_screenshots = 120  # 60 seconds of streaming at 2 FPS
+            
+            while session.get("streaming") and screenshot_count < max_screenshots:
+                try:
+                    # Capture screenshot
+                    screenshot = await page.screenshot()
+                    screenshot_b64 = base64.b64encode(screenshot).decode('utf-8')
+                    session["last_screenshot"] = screenshot_b64
+                    
+                    # Send to client
+                    await websocket.send_json({
+                        "type": "live_frame",
+                        "screenshot": f"data:image/png;base64,{screenshot_b64}",
+                        "frame": screenshot_count
+                    })
+                    
+                    screenshot_count += 1
+                    await asyncio.sleep(stream_interval)
+                    
+                except Exception as stream_error:
+                    print(f"[STREAM] Error: {stream_error}")
+                    break
+            
+            # Final screenshot
             screenshot = await page.screenshot()
             screenshot_b64 = base64.b64encode(screenshot).decode('utf-8')
-            session["last_screenshot"] = screenshot_b64
             
             await websocket.send_json({
                 "type": "result",
-                "message": "Task completed successfully",
-                "result": f"Navigated to Google",
+                "message": "Live streaming completed",
+                "result": f"Streamed {screenshot_count} frames",
                 "screenshot": f"data:image/png;base64,{screenshot_b64}"
             })
             
             session["status"] = "completed"
+            session["streaming"] = False
             
         except Exception as e:
             await websocket.send_json({
@@ -221,13 +255,21 @@ async def websocket_endpoint(websocket: WebSocket, session_id: str):
                 "message": f"Task execution error: {str(e)}"
             })
             session["status"] = "error"
+            session["streaming"] = False
         
         # Keep connection alive for manual commands
         while True:
             data = await websocket.receive_text()
             message = json.loads(data)
             
-            if message.get("type") == "screenshot":
+            if message.get("type") == "stop_stream":
+                session["streaming"] = False
+                print("[STREAM] Live stream stopped by user")
+                await websocket.send_json({
+                    "type": "status",
+                    "message": "Live stream stopped"
+                })
+            elif message.get("type") == "screenshot":
                 screenshot = await page.screenshot()
                 screenshot_b64 = base64.b64encode(screenshot).decode('utf-8')
                 await websocket.send_json({

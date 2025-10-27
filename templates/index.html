@@ -226,13 +226,20 @@ function connectWebSocket(sessionId) {
     };
 
     socket.onmessage = (event) => {
-        console.log('[WS] Message:', event.data);
+        console.log('[WS] Message received');
         try {
             const message = JSON.parse(event.data);
             switch (message.type) {
                 case 'connected':
                 case 'status':
                     addLog('status', message.message);
+                    break;
+                case 'live_frame':
+                    // Live streaming frame - update without logging each frame
+                    if (message.screenshot) {
+                        displayScreenshot(message.screenshot);
+                        updateStatus('connecting', `Live Stream (Frame ${message.frame})`);
+                    }
                     break;
                 case 'result':
                     addLog('info', message.message);
@@ -283,8 +290,17 @@ function requestScreenshot() {
 async function stopSession() {
     if (!sessionId) return;
     try {
-        addLog('status', 'Stopping session...');
+        addLog('status', 'Stopping live stream...');
+        
+        // Send stop streaming command
+        if (socket && socket.readyState === WebSocket.OPEN) {
+            socket.send(JSON.stringify({ type: 'stop_stream' }));
+        }
+        
+        // Close WebSocket
         if (socket) socket.close();
+        
+        // Stop session on server
         await fetch(`/stop-session/${sessionId}`, {method: 'POST'});
         addLog('info', 'Session stopped');
     } catch (error) {
