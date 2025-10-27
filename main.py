@@ -194,34 +194,22 @@ async def websocket_endpoint(websocket: WebSocket, session_id: str):
             "message": f"Running task: {task}"
         })
         
-        # Start live browser streaming
+        # Start live browser streaming with task execution
         session["status"] = "running"
         session["streaming"] = True
         
-        # Run the task - navigate and start live streaming
-        try:
-            # Simple navigation for testing
-            await page.goto("https://www.google.com")
-            await page.wait_for_load_state("networkidle")
-            
-            await websocket.send_json({
-                "type": "status",
-                "message": "Browser ready - Starting live stream..."
-            })
-            
-            # Start continuous screenshot streaming (live browser view)
-            stream_interval = 0.5  # 2 FPS - adjust for performance
+        # Create a background task for streaming
+        async def stream_screenshots():
+            """Background task to continuously stream screenshots"""
             screenshot_count = 0
-            max_screenshots = 120  # 60 seconds of streaming at 2 FPS
+            stream_interval = 0.3  # ~3 FPS for smoother experience
             
-            while session.get("streaming") and screenshot_count < max_screenshots:
+            while session.get("streaming"):
                 try:
-                    # Capture screenshot
                     screenshot = await page.screenshot()
                     screenshot_b64 = base64.b64encode(screenshot).decode('utf-8')
                     session["last_screenshot"] = screenshot_b64
                     
-                    # Send to client
                     await websocket.send_json({
                         "type": "live_frame",
                         "screenshot": f"data:image/png;base64,{screenshot_b64}",
@@ -230,10 +218,44 @@ async def websocket_endpoint(websocket: WebSocket, session_id: str):
                     
                     screenshot_count += 1
                     await asyncio.sleep(stream_interval)
-                    
-                except Exception as stream_error:
-                    print(f"[STREAM] Error: {stream_error}")
+                except Exception as e:
+                    print(f"[STREAM] Error: {e}")
                     break
+        
+        # Start streaming task in background
+        streaming_task = asyncio.create_task(stream_screenshots())
+        
+        # Execute the actual browser task
+        try:
+            await websocket.send_json({
+                "type": "status",
+                "message": f"Executing task: {task}"
+            })
+            
+            # Demo: Perform a Google search based on the task
+            await page.goto("https://www.google.com")
+            await page.wait_for_load_state("networkidle")
+            await asyncio.sleep(1)
+            
+            # Type in search box
+            search_box = await page.query_selector('textarea[name="q"]')
+            if search_box:
+                await search_box.fill(task)
+                await asyncio.sleep(1)
+                await search_box.press("Enter")
+                await page.wait_for_load_state("networkidle")
+                await asyncio.sleep(2)
+            
+            # Click first result
+            first_result = await page.query_selector('h3')
+            if first_result:
+                await first_result.click()
+                await page.wait_for_load_state("networkidle")
+                await asyncio.sleep(3)
+            
+            # Stop streaming
+            session["streaming"] = False
+            await streaming_task
             
             # Final screenshot
             screenshot = await page.screenshot()
@@ -241,21 +263,23 @@ async def websocket_endpoint(websocket: WebSocket, session_id: str):
             
             await websocket.send_json({
                 "type": "result",
-                "message": "Live streaming completed",
-                "result": f"Streamed {screenshot_count} frames",
+                "message": "Task completed successfully",
+                "result": f"Searched for: {task}",
                 "screenshot": f"data:image/png;base64,{screenshot_b64}"
             })
             
             session["status"] = "completed"
-            session["streaming"] = False
             
         except Exception as e:
+            session["streaming"] = False
+            if streaming_task and not streaming_task.done():
+                streaming_task.cancel()
+            
             await websocket.send_json({
                 "type": "error",
                 "message": f"Task execution error: {str(e)}"
             })
             session["status"] = "error"
-            session["streaming"] = False
         
         # Keep connection alive for manual commands
         while True:

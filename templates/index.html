@@ -275,7 +275,7 @@ function connectWebSocket(sessionId) {
 
 function displayScreenshot(screenshotData) {
     browserView.innerHTML = `<img src="${screenshotData}" alt="Browser Screenshot">`;
-    addLog('status', 'Screenshot updated');
+    // Don't log every screenshot update to avoid spam
 }
 
 function requestScreenshot() {
