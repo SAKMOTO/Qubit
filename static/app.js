@@ -31,8 +31,11 @@ document.addEventListener('DOMContentLoaded', () => {
 async function startSession() {
     const task = taskInput.value.trim();
     
+    console.log('[START] Button clicked, task:', task);
+    
     if (!task) {
         addLog('error', 'Please enter a task');
+        console.log('[START] No task entered');
         return;
     }
 
@@ -41,6 +44,8 @@ async function startSession() {
         startBtn.disabled = true;
         updateStatus('connecting', 'Starting session...');
         addLog('info', 'Initializing new session...');
+        
+        console.log('[START] Sending POST to /start-session');
 
         // Create session
         const response = await fetch('/start-session', {
@@ -54,13 +59,16 @@ async function startSession() {
             })
         });
 
+        console.log('[START] Response status:', response.status);
+
         if (!response.ok) {
-            throw new Error('Failed to create session');
+            throw new Error(`Failed to create session: ${response.status}`);
         }
 
         const data = await response.json();
         sessionId = data.session_id;
 
+        console.log('[START] Session created:', sessionId);
         addLog('status', `Session created: ${sessionId}`);
         addLog('status', 'Connecting to WebSocket...');
 
@@ -68,7 +76,7 @@ async function startSession() {
         connectWebSocket(sessionId);
 
     } catch (error) {
-        console.error('Error starting session:', error);
+        console.error('[START] Error:', error);
         addLog('error', `Failed to start session: ${error.message}`);
         updateStatus('error', 'Error');
         startBtn.disabled = false;
@@ -82,11 +90,13 @@ function connectWebSocket(sessionId) {
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
     const wsUrl = `${protocol}//${window.location.host}/ws/${sessionId}`;
 
+    console.log('[WS] Connecting to:', wsUrl);
     addLog('status', `Connecting to: ${wsUrl}`);
 
     socket = new WebSocket(wsUrl);
 
     socket.onopen = () => {
+        console.log('[WS] Connection opened');
         addLog('info', 'WebSocket connected successfully');
         updateStatus('connecting', 'Connected');
         isRunning = true;
@@ -94,16 +104,18 @@ function connectWebSocket(sessionId) {
     };
 
     socket.onmessage = (event) => {
+        console.log('[WS] Message received:', event.data);
         handleWebSocketMessage(event);
     };
 
     socket.onerror = (error) => {
-        console.error('WebSocket error:', error);
+        console.error('[WS] Error:', error);
         addLog('error', 'WebSocket connection error');
         updateStatus('error', 'Connection Error');
     };
 
-    socket.onclose = () => {
+    socket.onclose = (event) => {
+        console.log('[WS] Connection closed:', event.code, event.reason);
         addLog('warning', 'WebSocket connection closed');
         updateStatus('ready', 'Ready');
         resetUI();
