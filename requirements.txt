@@ -9,3 +9,7 @@ pydantic==2.5.3
 httpx==0.26.0
 python-socketio==5.10.0
 python-engineio==4.8.2
+langchain-anthropic
+langchain-openai
+langchain-core
+requests
