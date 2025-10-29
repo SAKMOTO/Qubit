@@ -1,0 +1,35 @@
+:8000 {
+    # Enable the admin API (required for Caddy to function properly)
+    admin :2019
+
+    # Log requests
+    log {
+        output stderr
+        level INFO
+    }
+
+    # Handle all requests
+    handle {
+        # Proxy to FastAPI
+        reverse_proxy 127.0.0.1:9000
+    }
+
+    # Serve noVNC client
+    handle_path /vnc/* {
+        root * /usr/share/novnc
+        file_server browse
+    }
+
+    # WebSocket proxy for VNC
+    handle_path /websockify* {
+        reverse_proxy 127.0.0.1:6080 {
+            header_up Host {http.reverse_proxy.upstream.hostport}
+            header_up X-Forwarded-Proto {http.request.scheme}
+        }
+    }
+
+    # Health check endpoint
+    handle_path /healthz {
+        respond "OK" 200
+    }
+}

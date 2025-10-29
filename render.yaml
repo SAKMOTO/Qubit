@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: qubit-browseruse
+    runtime: docker
+    plan: free
+    dockerfilePath: server/Dockerfile
+    envVars:
+      - key: PYTHONUNBUFFERED
+        value: "1"
+      - key: BROWSER_USE_API_KEY
+        sync: false
+      - key: PORT
+        value: "8000"
+    autoDeploy: true
+    healthCheckPath: /health

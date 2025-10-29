@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Qubit Browser - Live View</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; padding: 20px; color: #333; }
+        .container { max-width: 1400px; margin: 0 auto; }
+        header { text-align: center; color: white; margin-bottom: 30px; }
+        header h1 { font-size: 2.5rem; margin-bottom: 10px; text-shadow: 2px 2px 4px rgba(0,0,0,0.2); }
+        .subtitle { font-size: 1.1rem; opacity: 0.9; }
+        .main-content { display: grid; grid-template-columns: 350px 1fr; grid-template-rows: auto 1fr; gap: 20px; min-height: 600px; }
+        .control-panel { background: white; border-radius: 12px; padding: 25px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); grid-row: 1 / 3; }
+        .input-group { margin-bottom: 20px; }
+        .input-group label { display: block; margin-bottom: 8px; font-weight: 600; color: #555; }
+        .input-group textarea, .input-group input { width: 100%; padding: 12px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 14px; font-family: inherit; transition: border-color 0.3s; }
+        .input-group textarea:focus, .input-group input:focus { outline: none; border-color: #667eea; }
+        .input-group textarea { resize: vertical; min-height: 80px; }
+        .button-group { display: flex; gap: 10px; margin-bottom: 20px; }
+        .btn { flex: 1; padding: 12px 20px; border: none; border-radius: 8px; font-size: 16px; font-weight: 600; cursor: pointer; transition: all 0.3s; display: flex; align-items: center; justify-content: center; gap: 8px; }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        .btn-primary { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; }
+        .btn-primary:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4); }
+        .btn-danger { background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); color: white; }
+        .btn-danger:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(245, 87, 108, 0.4); }
+        .status-indicator { display: flex; align-items: center; gap: 10px; padding: 12px; background: #f5f5f5; border-radius: 8px; }
+        .status-dot { width: 12px; height: 12px; border-radius: 50%; background: #4caf50; animation: pulse 2s infinite; }
+        .status-dot.connecting { background: #ff9800; }
+        .status-dot.error { background: #f44336; }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+        .status-text { font-weight: 600; color: #555; }
+        .browser-view-container { background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.2); display: flex; flex-direction: column; }
+        .browser-header { background: #f5f5f5; padding: 12px 20px; border-bottom: 1px solid #e0e0e0; display: flex; justify-content: space-between; align-items: center; }
+        .browser-title { font-weight: 600; color: #555; }
+        .icon-btn { background: none; border: none; font-size: 18px; cursor: pointer; padding: 5px 10px; border-radius: 5px; transition: background 0.3s; }
+        .icon-btn:hover { background: #e0e0e0; }
+        .browser-view { flex: 1; min-height: 500px; background: #fafafa; display: flex; align-items: center; justify-content: center; position: relative; }
+        .browser-view img { max-width: 100%; max-height: 100%; object-fit: contain; }
+        .placeholder { text-align: center; color: #999; }
+        .placeholder-icon { font-size: 64px; margin-bottom: 20px; }
+        .placeholder p { font-size: 18px; margin-bottom: 10px; }
+        .placeholder-hint { font-size: 14px; color: #bbb; }
+        .logs-container { background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.2); display: flex; flex-direction: column; max-height: 300px; }
+        .logs-header { background: #f5f5f5; padding: 12px 20px; border-bottom: 1px solid #e0e0e0; display: flex; justify-content: space-between; align-items: center; }
+        .logs-title { font-weight: 600; color: #555; }
+        .logs { flex: 1; overflow-y: auto; padding: 15px; background: #1e1e1e; color: #f0f0f0; font-family: 'Courier New', monospace; font-size: 13px; }
+        .log-entry { padding: 8px 0; border-bottom: 1px solid #333; display: flex; gap: 10px; }
+        .log-entry:last-child { border-bottom: none; }
+        .log-time { color: #888; flex-shrink: 0; }
+        .log-message { flex: 1; }
+        .log-entry.info .log-message { color: #4caf50; }
+        .log-entry.error .log-message { color: #f44336; }
+        .log-entry.warning .log-message { color: #ff9800; }
+        .log-entry.status .log-message { color: #2196f3; }
+        footer { text-align: center; color: white; margin-top: 30px; padding: 20px; opacity: 0.8; }
+        footer a { color: white; text-decoration: none; font-weight: 600; }
+        footer a:hover { text-decoration: underline; }
+        @media (max-width: 1024px) { .main-content { grid-template-columns: 1fr; grid-template-rows: auto auto auto; } .control-panel { grid-row: 1; } }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🎯 Qubit Browser - Live View</h1>
+            <p class="subtitle">Watch AI perform tasks in real-time</p>
+        </header>
+
+        <div class="main-content">
+            <!-- Control Panel -->
+            <div class="control-panel">
+                <div class="input-group">
+                    <label for="taskInput">Enter Task:</label>
+                    <textarea 
+                        id="taskInput" 
+                        placeholder="e.g., Search for Python tutorials on YouTube"
+                        rows="3"
+                    ></textarea>
+                </div>
+
+                <div class="input-group">
+                    <label for="apiKey">API Key (Optional):</label>
+                    <input 
+                        type="password" 
+                        id="apiKey" 
+                        placeholder="Browser-Use API Key"
+                    >
+                </div>
+
+                <div class="button-group">
+                    <button id="startBtn" class="btn btn-primary">
+                        <span class="btn-icon">▶</span> Start Task
+                    </button>
+                    <button id="stopBtn" class="btn btn-danger" disabled>
+                        <span class="btn-icon">⏹</span> Stop
+                    </button>
+                </div>
+
+                <div class="status-indicator" id="statusIndicator">
+                    <span class="status-dot"></span>
+                    <span class="status-text">Ready</span>
+                </div>
+            </div>
+
+            <!-- Browser View -->
+            <div class="browser-view-container">
+                <div class="browser-header">
+                    <span class="browser-title">Live Browser View</span>
+                    <button id="refreshBtn" class="icon-btn" title="Refresh Screenshot">
+                        🔄
+                    </button>
+                </div>
+                <div class="browser-view" id="browserView">
+                    <div class="placeholder">
+                        <div class="placeholder-icon">🌐</div>
+                        <p>Browser view will appear here</p>
+                        <p class="placeholder-hint">Start a task to see live browser interaction</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Action Logs -->
+            <div class="logs-container">
+                <div class="logs-header">
+                    <span class="logs-title">Action Logs</span>
+                    <button id="clearLogsBtn" class="icon-btn" title="Clear Logs">
+                        🗑️
+                    </button>
+                </div>
+                <div class="logs" id="actionLogs">
+                    <div class="log-entry info">
+                        <span class="log-time">[Ready]</span>
+                        <span class="log-message">System initialized. Ready to start tasks.</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <footer>
+            <p>Powered by Browser-Use & Playwright | <a href="https://github.com" target="_blank">GitHub</a></p>
+        </footer>
+    </div>
+
+    <script>
+// Inline JavaScript to bypass static file serving issues
+// Global variables
+let socket = null;
+let sessionId = null;
+let isRunning = false;
+
+// DOM elements
+const startBtn = document.getElementById('startBtn');
+const stopBtn = document.getElementById('stopBtn');
+const refreshBtn = document.getElementById('refreshBtn');
+const clearLogsBtn = document.getElementById('clearLogsBtn');
+const taskInput = document.getElementById('taskInput');
+const apiKeyInput = document.getElementById('apiKey');
+const browserView = document.getElementById('browserView');
+const actionLogs = document.getElementById('actionLogs');
+const statusIndicator = document.getElementById('statusIndicator');
+
+// Event listeners
+startBtn.addEventListener('click', startSession);
+stopBtn.addEventListener('click', stopSession);
+refreshBtn.addEventListener('click', requestScreenshot);
+clearLogsBtn.addEventListener('click', clearLogs);
+
+// Initialize
+document.addEventListener('DOMContentLoaded', () => {
+    addLog('info', 'System initialized. Ready to start tasks.');
+    console.log('[INIT] Page loaded, JavaScript running');
+});
+
+async function startSession() {
+    const task = taskInput.value.trim();
+    console.log('[START] Button clicked, task:', task);
+    
+    if (!task) {
+        addLog('error', 'Please enter a task');
+        return;
+    }
+
+    try {
+        startBtn.disabled = true;
+        updateStatus('connecting', 'Starting session...');
+        addLog('info', 'Initializing new session...');
+        
+        console.log('[START] Sending POST to /start-session');
+        const response = await fetch('/start-session', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({task: task, api_key: apiKeyInput.value || null})
+        });
+
+        console.log('[START] Response status:', response.status);
+        if (!response.ok) throw new Error(`Failed: ${response.status}`);
+
+        const data = await response.json();
+        sessionId = data.session_id;
+        console.log('[START] Session created:', sessionId);
+        addLog('status', `Session created: ${sessionId}`);
+        connectWebSocket(sessionId);
+    } catch (error) {
+        console.error('[START] Error:', error);
+        addLog('error', `Failed: ${error.message}`);
+        updateStatus('error', 'Error');
+        startBtn.disabled = false;
+    }
+}
+
+function connectWebSocket(sessionId) {
+    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    const wsUrl = `${protocol}//${window.location.host}/ws/${sessionId}`;
+    console.log('[WS] Connecting to:', wsUrl);
+    addLog('status', `Connecting to WebSocket...`);
+
+    socket = new WebSocket(wsUrl);
+
+    socket.onopen = () => {
+        console.log('[WS] Connected');
+        addLog('info', 'WebSocket connected successfully');
+        updateStatus('connecting', 'Connected');
+        isRunning = true;
+        stopBtn.disabled = false;
+    };
+
+    socket.onmessage = (event) => {
+        console.log('[WS] Message received');
+        try {
+            const message = JSON.parse(event.data);
+            switch (message.type) {
+                case 'connected':
+                case 'status':
+                    addLog('status', message.message);
+                    break;
+                case 'live_frame':
+                    // Live streaming frame - update without logging each frame
+                    if (message.screenshot) {
+                        displayScreenshot(message.screenshot);
+                        updateStatus('connecting', `Live Stream (Frame ${message.frame})`);
+                    }
+                    break;
+                case 'result':
+                    addLog('info', message.message);
+                    if (message.screenshot) displayScreenshot(message.screenshot);
+                    updateStatus('ready', 'Completed');
+                    break;
+                case 'screenshot':
+                    if (message.screenshot) displayScreenshot(message.screenshot);
+                    break;
+                case 'error':
+                    addLog('error', message.message);
+                    updateStatus('error', 'Error');
+                    break;
+            }
+        } catch (e) {
+            console.error('[WS] Parse error:', e);
+        }
+    };
+
+    socket.onerror = (error) => {
+        console.error('[WS] Error:', error);
+        addLog('error', 'WebSocket connection error');
+        updateStatus('error', 'Connection Error');
+    };
+
+    socket.onclose = (event) => {
+        console.log('[WS] Closed:', event.code);
+        addLog('warning', 'WebSocket connection closed');
+        updateStatus('ready', 'Ready');
+        resetUI();
+    };
+}
+
+function displayScreenshot(screenshotData) {
+    browserView.innerHTML = `<img src="${screenshotData}" alt="Browser Screenshot">`;
+    // Don't log every screenshot update to avoid spam
+}
+
+function requestScreenshot() {
+    if (socket && socket.readyState === WebSocket.OPEN) {
+        socket.send(JSON.stringify({ type: 'screenshot' }));
+        addLog('status', 'Requesting screenshot...');
+    } else {
+        addLog('warning', 'No active connection');
+    }
+}
+
+async function stopSession() {
+    if (!sessionId) return;
+    try {
+        addLog('status', 'Stopping live stream...');
+        
+        // Send stop streaming command
+        if (socket && socket.readyState === WebSocket.OPEN) {
+            socket.send(JSON.stringify({ type: 'stop_stream' }));
+        }
+        
+        // Close WebSocket
+        if (socket) socket.close();
+        
+        // Stop session on server
+        await fetch(`/stop-session/${sessionId}`, {method: 'POST'});
+        addLog('info', 'Session stopped');
+    } catch (error) {
+        console.error('[STOP] Error:', error);
+    } finally {
+        resetUI();
+    }
+}
+
+function resetUI() {
+    isRunning = false;
+    sessionId = null;
+    startBtn.disabled = false;
+    stopBtn.disabled = true;
+    browserView.innerHTML = `
+        <div class="placeholder">
+            <div class="placeholder-icon">🌐</div>
+            <p>Browser view will appear here</p>
+            <p class="placeholder-hint">Start a task to see live browser interaction</p>
+        </div>
+    `;
+    updateStatus('ready', 'Ready');
+}
+
+function updateStatus(type, text) {
+    const statusDot = statusIndicator.querySelector('.status-dot');
+    const statusText = statusIndicator.querySelector('.status-text');
+    statusDot.classList.remove('connecting', 'error');
+    if (type === 'connecting') statusDot.classList.add('connecting');
+    else if (type === 'error') statusDot.classList.add('error');
+    statusText.textContent = text;
+}
+
+function addLog(type, message) {
+    const logEntry = document.createElement('div');
+    logEntry.className = `log-entry ${type}`;
+    const timestamp = new Date().toLocaleTimeString();
+    logEntry.innerHTML = `
+        <span class="log-time">[${timestamp}]</span>
+        <span class="log-message">${escapeHtml(message)}</span>
+    `;
+    actionLogs.insertBefore(logEntry, actionLogs.firstChild);
+    while (actionLogs.children.length > 100) {
+        actionLogs.removeChild(actionLogs.lastChild);
+    }
+}
+
+function clearLogs() {
+    actionLogs.innerHTML = '';
+    addLog('info', 'Logs cleared');
+}
+
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+window.addEventListener('beforeunload', () => {
+    if (socket && socket.readyState === WebSocket.OPEN) socket.close();
+});
+
+console.log('[INIT] JavaScript loaded and ready!');
+    </script>
+</body>
+</html>
