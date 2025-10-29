@@ -22,54 +22,81 @@ from PyQt6.QtWidgets import (
     QProgressBar,
     QSplashScreen,
 )
-from PyQt6.QtGui import QFont, QPalette, QColor, QPixmap, QPainter, QPen
+from PyQt6.QtGui import QFont, QPalette, QColor, QPixmap, QPainter, QPen, QLinearGradient, QIcon
 
 from .runner import run_task_stream
 
 
 class QubitSplashScreen(QSplashScreen):
     def __init__(self):
-        # Create a custom pixmap for the splash screen
-        pixmap = QPixmap(400, 300)
-        pixmap.fill(QColor(30, 30, 30))  # Dark background
-        
-        painter = QPainter(pixmap)
-        painter.setRenderHint(QPainter.RenderHint.Antialiasing)
-        
-        # Draw gradient background
-        gradient = QPainter.GradientType.LinearGradient
-        grad = QPainter.Gradient(0, 0, 400, 300)
-        grad.setColorAt(0, QColor(102, 126, 234))  # Purple-blue
-        grad.setColorAt(1, QColor(118, 75, 162))   # Purple
-        painter.fillRect(0, 0, 400, 300, grad)
-        
-        # Draw Qubit logo (Q with a circle)
-        painter.setPen(QPen(QColor(255, 255, 255), 8))
-        painter.setFont(QFont("Arial", 80, QFont.Weight.Bold))
-        painter.drawText(50, 100, "Q")
-        
-        # Draw circle around Q
-        painter.setPen(QPen(QColor(255, 255, 255), 6))
-        painter.drawEllipse(60, 20, 80, 80)
-        
-        # Draw "Qubit AI Browser" text
-        painter.setFont(QFont("Arial", 24, QFont.Weight.Bold))
-        painter.setPen(QPen(QColor(255, 255, 255)))
-        painter.drawText(50, 180, "Qubit AI Browser")
-        
-        # Draw subtitle
-        painter.setFont(QFont("Arial", 14))
-        painter.setPen(QPen(QColor(255, 255, 255, 180)))
-        painter.drawText(50, 210, "Your Intelligent Web Assistant")
-        
-        # Draw loading dots
-        painter.setFont(QFont("Arial", 20))
-        painter.setPen(QPen(QColor(255, 255, 255)))
-        painter.drawText(50, 250, "Loading...")
-        
-        painter.end()
-        
-        super().__init__(pixmap)
+        # If user provided a logo image, use it. Otherwise draw a branded splash.
+        assets_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "assets")
+        logo_path = os.path.join(assets_dir, "qubit_logo.png")
+
+        if os.path.exists(logo_path):
+            base = QPixmap(500, 360)
+            base.fill(QColor(30, 30, 30))
+
+            painter = QPainter(base)
+            painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+            grad = QLinearGradient(0, 0, 500, 360)
+            grad.setColorAt(0, QColor(102, 126, 234))
+            grad.setColorAt(1, QColor(118, 75, 162))
+            painter.fillRect(0, 0, 500, 360, grad)
+
+            # Center the provided logo
+            logo = QPixmap(logo_path)
+            if not logo.isNull():
+                scaled = logo.scaled(160, 160, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation)
+                x = (500 - scaled.width()) // 2
+                y = 60
+                painter.drawPixmap(x, y, scaled)
+
+            painter.setPen(QPen(QColor(255, 255, 255)))
+            painter.setFont(QFont("Arial", 24, QFont.Weight.Bold))
+            painter.drawText(0, 260, 500, 40, Qt.AlignmentFlag.AlignHCenter, "Qubit AI Browser")
+            painter.setFont(QFont("Arial", 14))
+            painter.setPen(QPen(QColor(255, 255, 255, 200)))
+            painter.drawText(0, 290, 500, 30, Qt.AlignmentFlag.AlignHCenter, "Your Intelligent Web Assistant")
+            painter.end()
+
+            super().__init__(base)
+        else:
+            # Create a custom pixmap for the splash screen (fallback)
+            pixmap = QPixmap(400, 300)
+            pixmap.fill(QColor(30, 30, 30))  # Dark background
+
+            painter = QPainter(pixmap)
+            painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+
+            # Draw gradient background
+            grad = QLinearGradient(0, 0, 400, 300)
+            grad.setColorAt(0, QColor(102, 126, 234))  # Purple-blue
+            grad.setColorAt(1, QColor(118, 75, 162))   # Purple
+            painter.fillRect(0, 0, 400, 300, grad)
+
+            # Draw Qubit logo (Q with a circle)
+            painter.setPen(QPen(QColor(255, 255, 255), 8))
+            painter.setFont(QFont("Arial", 80, QFont.Weight.Bold))
+            painter.drawText(50, 100, "Q")
+
+            # Draw circle around Q
+            painter.setPen(QPen(QColor(255, 255, 255), 6))
+            painter.drawEllipse(60, 20, 80, 80)
+
+            # Draw title and subtitle
+            painter.setFont(QFont("Arial", 24, QFont.Weight.Bold))
+            painter.setPen(QPen(QColor(255, 255, 255)))
+            painter.drawText(50, 180, "Qubit AI Browser")
+            painter.setFont(QFont("Arial", 14))
+            painter.setPen(QPen(QColor(255, 255, 255, 180)))
+            painter.drawText(50, 210, "Your Intelligent Web Assistant")
+            painter.setFont(QFont("Arial", 20))
+            painter.setPen(QPen(QColor(255, 255, 255)))
+            painter.drawText(50, 250, "Loading...")
+            painter.end()
+
+            super().__init__(pixmap)
         self.setWindowFlags(Qt.WindowType.SplashScreen | Qt.WindowType.FramelessWindowHint)
         
         # Animation for loading dots
@@ -113,6 +140,12 @@ class QubitMainWindow(QMainWindow):
         self.setWindowTitle("Qubit AI Browser - Your Intelligent Web Assistant")
         self.setMinimumSize(1000, 700)
         self.setStyleSheet(self.get_dark_theme())
+
+        # Set window icon if provided
+        assets_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "assets")
+        logo_path = os.path.join(assets_dir, "qubit_logo.png")
+        if os.path.exists(logo_path):
+            self.setWindowIcon(QIcon(logo_path))
         
         # Create splash screen
         self.splash = QubitSplashScreen()
