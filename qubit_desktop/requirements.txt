@@ -1,0 +1,6 @@
+PyQt6>=6.7.0
+browser-use>=0.2.0
+pydantic>=2.11.5
+playwright==1.48.0
+python-dotenv>=1.0.1
+
