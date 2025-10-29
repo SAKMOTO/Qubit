@@ -4,7 +4,7 @@ import asyncio
 import os
 from typing import Optional
 
-from PyQt6.QtCore import Qt, QThread, pyqtSignal, QTimer
+from PyQt6.QtCore import Qt, QThread, pyqtSignal, QTimer, QPropertyAnimation, QEasingCurve, QRect
 from PyQt6.QtWidgets import (
     QWidget,
     QMainWindow,
@@ -20,10 +20,68 @@ from PyQt6.QtWidgets import (
     QSplitter,
     QGroupBox,
     QProgressBar,
+    QSplashScreen,
 )
-from PyQt6.QtGui import QFont, QPalette, QColor
+from PyQt6.QtGui import QFont, QPalette, QColor, QPixmap, QPainter, QPen
 
 from .runner import run_task_stream
+
+
+class QubitSplashScreen(QSplashScreen):
+    def __init__(self):
+        # Create a custom pixmap for the splash screen
+        pixmap = QPixmap(400, 300)
+        pixmap.fill(QColor(30, 30, 30))  # Dark background
+        
+        painter = QPainter(pixmap)
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+        
+        # Draw gradient background
+        gradient = QPainter.GradientType.LinearGradient
+        grad = QPainter.Gradient(0, 0, 400, 300)
+        grad.setColorAt(0, QColor(102, 126, 234))  # Purple-blue
+        grad.setColorAt(1, QColor(118, 75, 162))   # Purple
+        painter.fillRect(0, 0, 400, 300, grad)
+        
+        # Draw Qubit logo (Q with a circle)
+        painter.setPen(QPen(QColor(255, 255, 255), 8))
+        painter.setFont(QFont("Arial", 80, QFont.Weight.Bold))
+        painter.drawText(50, 100, "Q")
+        
+        # Draw circle around Q
+        painter.setPen(QPen(QColor(255, 255, 255), 6))
+        painter.drawEllipse(60, 20, 80, 80)
+        
+        # Draw "Qubit AI Browser" text
+        painter.setFont(QFont("Arial", 24, QFont.Weight.Bold))
+        painter.setPen(QPen(QColor(255, 255, 255)))
+        painter.drawText(50, 180, "Qubit AI Browser")
+        
+        # Draw subtitle
+        painter.setFont(QFont("Arial", 14))
+        painter.setPen(QPen(QColor(255, 255, 255, 180)))
+        painter.drawText(50, 210, "Your Intelligent Web Assistant")
+        
+        # Draw loading dots
+        painter.setFont(QFont("Arial", 20))
+        painter.setPen(QPen(QColor(255, 255, 255)))
+        painter.drawText(50, 250, "Loading...")
+        
+        painter.end()
+        
+        super().__init__(pixmap)
+        self.setWindowFlags(Qt.WindowType.SplashScreen | Qt.WindowType.FramelessWindowHint)
+        
+        # Animation for loading dots
+        self.dot_count = 0
+        self.timer = QTimer()
+        self.timer.timeout.connect(self.update_dots)
+        self.timer.start(500)  # Update every 500ms
+        
+    def update_dots(self):
+        self.dot_count = (self.dot_count + 1) % 4
+        dots = "." * self.dot_count
+        self.showMessage(f"Loading{dots}", Qt.AlignmentFlag.AlignBottom | Qt.AlignmentFlag.AlignCenter, QColor(255, 255, 255))
 
 
 class AgentThread(QThread):
@@ -55,6 +113,16 @@ class QubitMainWindow(QMainWindow):
         self.setWindowTitle("Qubit AI Browser - Your Intelligent Web Assistant")
         self.setMinimumSize(1000, 700)
         self.setStyleSheet(self.get_dark_theme())
+        
+        # Create splash screen
+        self.splash = QubitSplashScreen()
+        self.splash.show()
+        
+        # Center the splash screen
+        self.splash.move(
+            (self.splash.screen().geometry().width() - self.splash.width()) // 2,
+            (self.splash.screen().geometry().height() - self.splash.height()) // 2
+        )
 
         root = QWidget()
         self.setCentralWidget(root)
@@ -287,6 +355,9 @@ class QubitMainWindow(QMainWindow):
         self.append_log("🎉 Welcome to Qubit AI Browser!")
         self.append_log("💡 Enter a task above and click 'Run Task' to get started.")
         self.append_log("🔧 Use 'Headed Mode' to see the browser in action.")
+        
+        # Hide splash screen after a delay
+        QTimer.singleShot(2000, self.hide_splash)
 
     def append_log(self, line: str) -> None:
         self.log.append(f"[{self.get_timestamp()}] {line}")
@@ -300,6 +371,10 @@ class QubitMainWindow(QMainWindow):
         return datetime.now().strftime("%H:%M:%S")
 
     def on_done(self, success: bool, summary: str) -> None:
+        # Hide splash screen when task is done
+        if hasattr(self, 'splash'):
+            self.splash.close()
+            
         if success:
             self.status_lbl.setText("✅ Task completed successfully!")
             self.status_lbl.setStyleSheet("color: #4CAF50; font-weight: bold; font-size: 14px;")
@@ -313,6 +388,26 @@ class QubitMainWindow(QMainWindow):
         self.run_btn.setEnabled(True)
         self.run_btn.setText("🚀 Run Task")
 
+    def hide_splash(self):
+        """Hide the splash screen and show the main window"""
+        self.splash.close()
+        self.show()
+        self.raise_()
+        self.activateWindow()
+
+    def show_task_splash(self, task: str):
+        """Show splash screen during task execution"""
+        self.splash = QubitSplashScreen()
+        self.splash.show()
+        self.splash.showMessage(f"Executing: {task[:30]}...", 
+                              Qt.AlignmentFlag.AlignBottom | Qt.AlignmentFlag.AlignCenter, 
+                              QColor(255, 255, 255))
+        # Center the splash screen
+        self.splash.move(
+            (self.splash.screen().geometry().width() - self.splash.width()) // 2,
+            (self.splash.screen().geometry().height() - self.splash.height()) // 2
+        )
+
     def on_run(self) -> None:
         task = self.task_input.text().strip()
         if not task:
@@ -324,6 +419,10 @@ class QubitMainWindow(QMainWindow):
         self.status_lbl.setStyleSheet("color: #2196F3; font-weight: bold; font-size: 14px;")
         self.progress.setVisible(True)
         self.progress.setRange(0, 0)  # Indeterminate progress
+        
+        # Show splash screen during task execution
+        self.show_task_splash(task)
+        
         use_cloud = self.cloud_cb.isChecked()
         headed = self.headed_cb.isChecked()
         channel = None
@@ -333,6 +432,7 @@ class QubitMainWindow(QMainWindow):
             self.run_btn.setEnabled(True)
             self.run_btn.setText("🚀 Run Task")
             self.progress.setVisible(False)
+            self.splash.close()
             return
 
         self.worker = AgentThread(task, use_cloud, headed, channel)
