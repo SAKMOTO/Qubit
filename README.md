@@ -1,76 +1,62 @@
-# Browser-Use Live Agent
+<p align="center">
+  <img src="assets/logo.png" alt="Qubit Logo" width="120" height="120">
+</p>
 
-A real-time browser automation tool that allows you to control a browser through natural language commands and see the results in real-time.
+<h1 align="center">⚡ Qubit – AI Browser</h1>
 
-## Features
+<p align="center">
+  <b>AI-powered real-time browser automation tool</b><br>
+  Control and interact with the web using natural language commands.
+</p>
 
-- Real-time browser interaction
-- WebSocket-based communication
-- Simple and intuitive web interface
-- Supports multiple browser sessions
-- Built with FastAPI and Playwright
+---
 
-## Prerequisites
+## 🌟 Features
 
-- Python 3.8+
-- Node.js (for frontend development, optional)
-- Playwright browsers (will be installed automatically)
+- 🧠 **AI-Powered Commands** – Control your browser using plain English (e.g., “Open YouTube and search lo-fi music”).  
+- ⚙️ **Real-Time Browser Control** – Watch your browser respond instantly via WebSocket.  
+- 🌐 **Multi-Session Support** – Manage multiple browsers at once.  
+- ⚡ **FastAPI + Playwright Backend** – Super fast, reliable, and modern.  
+- 💻 **Clean UI** – Simple web interface built with HTML, CSS, and JS.
 
-## Installation
+---
 
-1. Clone the repository:
-   ```bash
-   git clone <repository-url>
-   cd browser-use
-   ```
+## 🛠️ Tech Stack
 
-2. Create and activate a virtual environment:
-   ```bash
-   python -m venv venv
-   source venv/bin/activate  # On Windows: venv\Scripts\activate
-   ```
+| Layer | Technologies |
+|:------|:--------------|
+| **Frontend** | HTML, CSS, JavaScript |
+| **Backend** | FastAPI (Python) |
+| **Browser Engine** | Playwright |
+| **Communication** | WebSocket |
+| **AI Layer (optional)** | Gemini API / OpenAI API |
+| **Hosting (optional)** | Vercel / Render / Localhost |
 
-3. Install the required dependencies:
-   ```bash
-   pip install -r requirements.txt
-   ```
+---
 
-4. Install Playwright browsers:
-   ```bash
-   playwright install
-   ```
+## 📸 Screenshots
 
-## Usage
+| Interface | Description |
+|:-----------|:-------------|
+| ![Dashboard](screenshots/dashboard.png) | Main interface showing live browser feed |
+| ![Command Example](screenshots/command.png) | Example of a natural language command execution |
+| ![Session View](screenshots/session.png) | Multi-session browser control interface |
 
-1. Start the server:
-   ```bash
-   uvicorn main:app --reload
-   ```
+> 📝 Add your screenshots inside the `/screenshots` folder.
 
-2. Open your web browser and navigate to:
-   ```
-   http://localhost:8000/static/index.html
-   ```
+---
 
-3. Click "Start Session" to create a new browser session
-4. Enter a task in the input field and click "Execute Task"
+## 🎥 Demo Video
 
-## API Endpoints
+🎬 [Watch Demo Video](videos/demo.mp4)
 
-- `GET /` - Health check endpoint
-- `POST /start-session` - Start a new browser session
-- `WS /ws/{session_id}` - WebSocket endpoint for real-time communication
+> Upload your screen recording to `/videos/demo.mp4` or paste a YouTube link here.
 
-## Development
+---
 
-### Frontend
+## 🚀 Installation Guide
 
-The frontend is a simple HTML/JS application located in the `static` directory. You can modify the files there and they will be served automatically.
-
-### Backend
-
-The backend is built with FastAPI and uses Playwright for browser automation. The main application logic is in `main.py`.
-
-## License
-
-MIT
+### 1️⃣ Clone the repository
+```bash
+git clone https://github.com/yourusername/Qubit.git
+cd Qubit
