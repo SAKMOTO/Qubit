@@ -60,3 +60,59 @@
 ```bash
 git clone https://github.com/yourusername/Qubit.git
 cd Qubit
+
+```
+2️⃣ Create and activate virtual environment
+````
+python -m venv venv
+source venv/bin/activate   # On Windows: venv\Scripts\activate
+````
+3️⃣ Install dependencies
+```
+pip install -r requirements.txt
+```
+4️⃣ Install Playwright browsers
+```
+playwright install
+```
+5️⃣ Run the server
+```
+uvicorn main:app --reload
+```
+6️⃣ Open the interface
+
+Visit:
+
+http://localhost:8000/static/index.html
+
+
+Then click Start Session, type a command, and press Execute Task ⚡
+
+🔌 API Endpoints
+Method	Endpoint	Description
+GET	/	Health check endpoint
+POST	/start-session	Start a new browser session
+WS	/ws/{session_id}	WebSocket endpoint for real-time communication
+💡 Future Enhancements
+
+🤖 Integrate Gemini or ChatGPT for complex understanding
+
+🔒 Add authentication for secure sessions
+
+📊 Implement analytics for browser usage
+
+🧠 Add AI memory for smarter browsing
+
+📜 License
+
+MIT © 2025 Mohammad Harun
+https://github.com/yourusername/Qubit
+
+💬 About the Developer
+
+Developed by Mohammad Harun
+Building intelligent, future-focused AI software with modern tech stacks.
+
+🌐 Portfolio: https://portfolio-harun.vercel.app/
+
+📧 Email:mohammedharun3916@gmail.com
