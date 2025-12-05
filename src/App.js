@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
+import { HashRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
 import ErrorBoundary from './components/ErrorBoundary';
 import { Terminal, Play, Square, Rocket, Cpu, Server, Home as HomeIcon, Archive as ArchiveIcon, User as UserIcon, Settings as SettingsIcon } from 'lucide-react';
 import './App.css';
@@ -456,6 +456,30 @@ const AppContent = () => {
               <p>Learn quantum computing concepts through interactive tutorials and guided exercises. Perfect for both beginners and advanced users.</p>
             </div>
           </div>
+        </div>
+      </section>
+
+      {/* Download App Section */}
+      <section className="download-section" style={{ padding: '2rem 0' }}>
+        <div className="container" style={{ maxWidth: '800px', margin: '0 auto', padding: '0 1rem', textAlign: 'center' }}>
+          <h2 className="section-title" style={{ marginBottom: '1rem' }}>Download Qubit Desktop ZIP</h2>
+          <p style={{ marginBottom: '1.5rem', color: 'rgba(255, 255, 255, 0.8)' }}>
+            Before you open the app, <strong>extract the downloaded ZIP file</strong>. Inside the extracted folder you will find the Qubit app.
+          </p>
+          <button
+            className="cta-button"
+            style={{ padding: '0.75rem 2rem', fontSize: '1.05rem' }}
+            onClick={() => {
+              const confirmDownload = window.confirm(
+                'Important:\n\nAfter the ZIP is downloaded, you must EXTRACT it first. Inside the extracted folder you will find the Qubit app.\n\nClick OK to start the download.'
+              );
+              if (confirmDownload) {
+                window.open('https://drive.google.com/uc?export=download&id=1fuDwHOP-ZvQR3hmsJIw3YDtm8z937bji', '_blank');
+              }
+            }}
+          >
+            Download ZIP
+          </button>
         </div>
       </section>
 
