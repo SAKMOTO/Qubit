@@ -41,12 +41,12 @@ This repository contains the **Electron front-end** of Qubit Desktop.
 
 ## 📺 SaaS Explainer Video
 
-You can include your SaaS/marketing explainer video here.
+Watch the short explainer video that introduces Qubit Desktop and how it works:
 
-- **Explainer Video:** *(replace this with your real link)*  
-  `https://your-video-platform.com/qubit-desktop-explainer`
+- **Explainer Video (Google Drive):**  
+  https://drive.google.com/file/d/15KpvmKIi9fG_tfumIqvJYcXrCD3SywQs/view?usp=sharing
 
-> Once you have the final video URL (YouTube, Loom, etc.), update this section so visitors can quickly understand the product.
+> If the video does not autoplay on GitHub, open the link in a browser to view the full SaaS explainer.
 
 ---
 
