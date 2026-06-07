@@ -1,0 +1,9 @@
+# Global backend requirements (installed in addition to Qubit_backend/requirements.txt)
+openhands
+uv
+playwright
+
+
+
+
+

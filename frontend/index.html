@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Qubit Desktop App</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', 'Consolas', monospace;
+            background: #0d1117;
+            color: #c9d1d9;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 20px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+        }
+
+        .header h1 {
+            font-size: 1.5em;
+            font-weight: 600;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 6px;
+            font-size: 0.9em;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateY(-1px);
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn.stop {
+            background: rgba(239, 68, 68, 0.8);
+        }
+
+        .btn.stop:hover {
+            background: rgba(239, 68, 68, 1);
+        }
+
+        .container {
+            flex: 1;
+            display: flex;
+            gap: 10px;
+            padding: 10px;
+            overflow: hidden;
+        }
+
+        .panel {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: #161b22;
+            border-radius: 8px;
+            border: 1px solid #30363d;
+            overflow: hidden;
+        }
+
+        .panel-header {
+            background: #21262d;
+            padding: 12px 16px;
+            border-bottom: 1px solid #30363d;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .panel-title {
+            font-weight: 600;
+            font-size: 0.95em;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .status-indicator {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #30363d;
+        }
+
+        .status-indicator.running {
+            background: #3fb950;
+            box-shadow: 0 0 8px #3fb950;
+        }
+
+        .terminal {
+            flex: 1;
+            padding: 15px;
+            overflow-y: auto;
+            font-size: 13px;
+            line-height: 1.6;
+            background: #0d1117;
+            color: #c9d1d9;
+            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', 'Consolas', monospace;
+            min-height: 200px;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .terminal:empty::before {
+            content: 'No output yet...';
+            color: #6e7681;
+            font-style: italic;
+        }
+
+        .terminal::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .terminal::-webkit-scrollbar-track {
+            background: #0d1117;
+        }
+
+        .terminal::-webkit-scrollbar-thumb {
+            background: #30363d;
+            border-radius: 4px;
+        }
+
+        .terminal::-webkit-scrollbar-thumb:hover {
+            background: #484f58;
+        }
+
+        .terminal-line {
+            margin-bottom: 2px;
+            word-wrap: break-word;
+            white-space: pre-wrap;
+        }
+
+        .terminal-line.error {
+            color: #f85149;
+        }
+
+        .terminal-line.success {
+            color: #3fb950;
+        }
+
+        .terminal-line.info {
+            color: #58a6ff;
+        }
+
+        .chat-input-container {
+            border-top: 1px solid #30363d;
+            padding: 12px;
+            background: #21262d;
+            display: flex;
+            gap: 8px;
+        }
+
+        .chat-input {
+            flex: 1;
+            background: #0d1117;
+            border: 1px solid #30363d;
+            border-radius: 6px;
+            padding: 8px 12px;
+            color: #c9d1d9;
+            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', 'Consolas', monospace;
+            font-size: 13px;
+        }
+
+        .chat-input:focus {
+            outline: none;
+            border-color: #58a6ff;
+        }
+
+        .chat-input::placeholder {
+            color: #6e7681;
+        }
+
+        .send-btn {
+            padding: 8px 16px;
+            background: #238636;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: background 0.2s;
+        }
+
+        .send-btn:hover {
+            background: #2ea043;
+        }
+
+        .send-btn:disabled {
+            background: #30363d;
+            cursor: not-allowed;
+        }
+
+        .empty-state {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            color: #6e7681;
+            font-size: 0.9em;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>⚡ Qubit Desktop App</h1>
+        <div class="button-group">
+            <button class="btn" id="qubit-btn">🚀 Launch Qubit Browser</button>
+            <button class="btn stop" id="qubit-stop-btn" disabled>⏹️ Stop</button>
+            <button class="btn" id="openhands-btn">🤖 Launch OpenHands</button>
+            <button class="btn stop" id="openhands-stop-btn" disabled>⏹️ Stop</button>
+        </div>
+    </div>
+
+    <div class="container">
+        <!-- Qubit Panel -->
+        <div class="panel">
+            <div class="panel-header">
+                <div class="panel-title">
+                    <span class="status-indicator" id="qubit-status"></span>
+                    <span>Qubit Browser</span>
+                </div>
+            </div>
+            <div class="terminal" id="qubit-terminal">
+                <div class="empty-state">Click "Launch Qubit Browser" to start</div>
+            </div>
+        </div>
+
+        <!-- OpenHands Panel -->
+        <div class="panel">
+            <div class="panel-header">
+                <div class="panel-title">
+                    <span class="status-indicator" id="openhands-status"></span>
+                    <span>OpenHands CLI (uvx --python 3.12 openhands)</span>
+                </div>
+            </div>
+            <div class="terminal" id="openhands-terminal">
+                <div class="empty-state">Click "Launch OpenHands" to start</div>
+            </div>
+            <div class="chat-input-container">
+                <input 
+                    type="text" 
+                    class="chat-input" 
+                    id="openhands-input" 
+                    placeholder="Type message to OpenHands (Enter to send)"
+                    disabled
+                />
+                <button class="send-btn" id="openhands-send-btn" disabled>Send</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const qubitBtn = document.getElementById('qubit-btn');
+        const qubitStopBtn = document.getElementById('qubit-stop-btn');
+        const openhandsBtn = document.getElementById('openhands-btn');
+        const openhandsStopBtn = document.getElementById('openhands-stop-btn');
+        const openhandsInput = document.getElementById('openhands-input');
+        const openhandsSendBtn = document.getElementById('openhands-send-btn');
+        const qubitTerminal = document.getElementById('qubit-terminal');
+        const openhandsTerminal = document.getElementById('openhands-terminal');
+        const qubitStatusIndicator = document.getElementById('qubit-status');
+        const openhandsStatusIndicator = document.getElementById('openhands-status');
+
+        let qubitRunning = false;
+        let openhandsRunning = false;
+
+        // Terminal output helpers
+        function addTerminalLine(terminal, text, type = '') {
+            // Remove empty state if present
+            const emptyState = terminal.querySelector('.empty-state');
+            if (emptyState) {
+                emptyState.remove();
+            }
+
+            // Split text by newlines and add each line
+            const lines = text.split('\n');
+            lines.forEach((lineText, index) => {
+                if (lineText.trim() || index === lines.length - 1) {
+                    const line = document.createElement('div');
+                    line.className = `terminal-line ${type}`;
+                    line.textContent = lineText;
+                    terminal.appendChild(line);
+                }
+            });
+            
+            // Auto-scroll to bottom
+            terminal.scrollTop = terminal.scrollHeight;
+        }
+
+        // Launch Qubit
+        async function launchQubit() {
+            qubitBtn.disabled = true;
+            addTerminalLine(qubitTerminal, '🚀 Launching Qubit Browser...', 'info');
+            
+            try {
+                const result = await window.electronAPI.launchQubit();
+                if (result.success) {
+                    addTerminalLine(qubitTerminal, result.message, 'success');
+                    qubitRunning = true;
+                    qubitBtn.disabled = true;
+                    qubitStopBtn.disabled = false;
+                } else {
+                    addTerminalLine(qubitTerminal, `❌ ${result.message}`, 'error');
+                    qubitBtn.disabled = false;
+                }
+            } catch (error) {
+                addTerminalLine(qubitTerminal, `❌ Error: ${error.message}`, 'error');
+                qubitBtn.disabled = false;
+            }
+        }
+
+        // Launch OpenHands
+        async function launchOpenHands() {
+            openhandsBtn.disabled = true;
+            openhandsTerminal.innerHTML = ''; // Clear terminal
+            addTerminalLine(openhandsTerminal, '🚀 Launching OpenHands...', 'info');
+            
+            try {
+                const result = await window.electronAPI.launchOpenHands();
+                if (result.success) {
+                    addTerminalLine(openhandsTerminal, result.message, 'success');
+                    // Don't set running = true yet, wait for status update
+                } else {
+                    addTerminalLine(openhandsTerminal, `❌ ${result.message}`, 'error');
+                    openhandsBtn.disabled = false;
+                }
+            } catch (error) {
+                addTerminalLine(openhandsTerminal, `❌ Error: ${error.message}`, 'error');
+                openhandsBtn.disabled = false;
+            }
+        }
+
+        // Stop process
+        async function stopProcess(type) {
+            try {
+                const result = await window.electronAPI.stopProcess(type);
+                if (result.success) {
+                    if (type === 'qubit') {
+                        addTerminalLine(qubitTerminal, `\n⏹️ ${result.message}`, 'info');
+                        qubitRunning = false;
+                        qubitBtn.disabled = false;
+                        qubitStopBtn.disabled = true;
+                    } else {
+                        addTerminalLine(openhandsTerminal, `\n⏹️ ${result.message}`, 'info');
+                        openhandsRunning = false;
+                        openhandsBtn.disabled = false;
+                        openhandsStopBtn.disabled = true;
+                        openhandsInput.disabled = true;
+                        openhandsSendBtn.disabled = true;
+                    }
+                }
+            } catch (error) {
+                console.error('Stop error:', error);
+            }
+        }
+
+        // Send input to OpenHands
+        async function sendOpenHandsInput() {
+            const input = openhandsInput.value.trim();
+            if (!input || !openhandsRunning) return;
+
+            try {
+                await window.electronAPI.sendOpenHandsInput(input);
+                openhandsInput.value = '';
+            } catch (error) {
+                addTerminalLine(openhandsTerminal, `❌ Error sending input: ${error.message}`, 'error');
+            }
+        }
+
+        // Event listeners
+        qubitBtn.addEventListener('click', launchQubit);
+        openhandsBtn.addEventListener('click', launchOpenHands);
+        qubitStopBtn.addEventListener('click', () => stopProcess('qubit'));
+        openhandsStopBtn.addEventListener('click', () => stopProcess('openhands'));
+        openhandsSendBtn.addEventListener('click', sendOpenHandsInput);
+        openhandsInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                sendOpenHandsInput();
+            }
+        });
+
+        // Listen for streaming output
+        window.electronAPI.onQubitOutput((data) => {
+            if (data && data.trim()) {
+                addTerminalLine(qubitTerminal, data);
+            }
+        });
+
+        window.electronAPI.onOpenHandsOutput((data) => {
+            if (data && data.trim()) {
+                // Check if it's an error message about Docker
+                if (data.includes('Docker') || data.includes('docker')) {
+                    addTerminalLine(openhandsTerminal, data, 'error');
+                } else {
+                    addTerminalLine(openhandsTerminal, data);
+                }
+            }
+        });
+
+        window.electronAPI.onQubitStatus((status) => {
+            qubitRunning = status;
+            qubitStatusIndicator.classList.toggle('running', status);
+            if (!status) {
+                qubitBtn.disabled = false;
+                qubitStopBtn.disabled = true;
+            }
+        });
+
+        window.electronAPI.onOpenHandsStatus((status) => {
+            openhandsRunning = status;
+            openhandsStatusIndicator.classList.toggle('running', status);
+            if (!status) {
+                openhandsBtn.disabled = false;
+                openhandsStopBtn.disabled = true;
+                openhandsInput.disabled = true;
+                openhandsSendBtn.disabled = true;
+            } else {
+                // When running, enable chat input
+                openhandsInput.disabled = false;
+                openhandsSendBtn.disabled = false;
+            }
+        });
+
+        // Check initial status
+        window.electronAPI.getStatus().then(status => {
+            if (status.qubit) {
+                qubitRunning = true;
+                qubitStatusIndicator.classList.add('running');
+                qubitBtn.disabled = true;
+                qubitStopBtn.disabled = false;
+            }
+            if (status.openhands) {
+                openhandsRunning = true;
+                openhandsStatusIndicator.classList.add('running');
+                openhandsBtn.disabled = true;
+                openhandsStopBtn.disabled = false;
+                openhandsInput.disabled = false;
+                openhandsSendBtn.disabled = false;
+            }
+        });
+    </script>
+</body>
+</html>

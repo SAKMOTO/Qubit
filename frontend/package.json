@@ -1,0 +1,147 @@
+{
+  "name": "Qubit",
+  "version": "1.0.0",
+  "description": "Beautiful launcher for Qubit Browser and OpenHands",
+  "main": "main.js",
+  "homepage": "./",
+  "scripts": {
+    "start": "electron-forge start",
+    "react-start": "BROWSER=none react-scripts start",
+    "react-build": "react-scripts build",
+    "electron": "electron .",
+    "dev": "NODE_ENV=development concurrently \"npm run react-start\" \"wait-on http://localhost:3000 && electron .\"",
+    "build": "npm run react-build && electron-builder",
+    "build:win": "npm run react-build && electron-builder --win",
+    "build:mac": "npm run react-build && electron-builder --mac",
+    "build:linux": "npm run react-build && electron-builder --linux",
+    "package": "electron-forge package",
+    "make": "electron-forge make"
+  },
+  "keywords": [
+    "electron",
+    "qubit",
+    "openhands",
+    "ai",
+    "desktop"
+  ],
+  "author": "Your Name",
+  "license": "MIT",
+  "dependencies": {
+    "@gsap/react": "^2.1.2",
+    "@splinetool/react-spline": "^4.1.0",
+    "@splinetool/runtime": "^1.12.5",
+    "electron-squirrel-startup": "^1.0.1",
+    "framer-motion": "^12.23.25",
+    "gsap": "^3.13.0",
+    "lucide-react": "^0.294.0",
+    "node-pty": "^1.0.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-router-dom": "^7.10.0",
+    "xterm": "^5.3.0",
+    "xterm-addon-fit": "^0.8.0",
+    "xterm-addon-web-links": "^0.9.0"
+  },
+  "devDependencies": {
+    "@electron-forge/cli": "^7.10.2",
+    "@electron-forge/maker-deb": "^7.10.2",
+    "@electron-forge/maker-rpm": "^7.10.2",
+    "@electron-forge/maker-squirrel": "^7.10.2",
+    "@electron-forge/maker-zip": "^7.10.2",
+    "@electron-forge/plugin-auto-unpack-natives": "^7.10.2",
+    "@electron-forge/plugin-fuses": "^7.10.2",
+    "@electron/fuses": "^1.8.0",
+    "concurrently": "^8.2.2",
+    "electron": "^31.0.0",
+    "electron-rebuild": "^3.2.9",
+    "react-scripts": "5.0.1",
+    "wait-on": "^7.2.0"
+  },
+  "build": {
+    "appId": "com.qubit",
+    "productName": "Qubit",
+    "directories": {
+      "output": "dist",
+      "buildResources": "build"
+    },
+    "files": [
+      "**/*",
+      "!backend/venv/**/*",
+      "!backend/**/__pycache__/**/*",
+      "!**/*.pyc",
+      "!.git/**/*",
+      "!node_modules/**/*"
+    ],
+    "extraFiles": [
+      {
+        "from": "backend",
+        "to": "backend",
+        "filter": [
+          "**/*",
+          "!venv/**/*",
+          "!**/__pycache__/**/*"
+        ]
+      }
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "icon": "build/icon.ico"
+    },
+    "mac": {
+      "target": [
+        {
+          "target": "dmg",
+          "arch": [
+            "x64",
+            "arm64"
+          ]
+        }
+      ],
+      "icon": "build/icon.icns",
+      "category": "public.app-category.developer-tools"
+    },
+    "linux": {
+      "target": [
+        {
+          "target": "AppImage",
+          "arch": [
+            "x64"
+          ]
+        },
+        {
+          "target": "deb",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "icon": "build/icon.png",
+      "category": "Utility"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true
+    }
+  },
+  "browserslist": {
+    "production": [
+      ">0.2%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
+  }
+}
